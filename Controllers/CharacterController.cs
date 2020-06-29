@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using sampleAPI.Dtos.Character;
 using sampleAPI.Services.CharacterService;
 
 namespace sampleAPI.Controllers
@@ -31,9 +32,14 @@ namespace sampleAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddCharacter(Character newCharacter)
+        public async Task<IActionResult> AddCharacter(AddCharacterDto newCharacter)
         {
             return Ok(await _characterService.AddCharacter(newCharacter));
+        }
+        
+        [HttpPost]
+        public async Task<IActionResult> UpdateCharacter(UpdateCharacterDto character){
+            return Ok(await _characterService.UpdateCharacter(character));
         }
     }
 }
