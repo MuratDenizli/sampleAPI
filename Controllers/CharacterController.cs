@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using sampleAPI.Dtos.Character;
+using sampleAPI.Models;
 using sampleAPI.Services.CharacterService;
 
 namespace sampleAPI.Controllers
@@ -36,10 +37,28 @@ namespace sampleAPI.Controllers
         {
             return Ok(await _characterService.AddCharacter(newCharacter));
         }
-        
-        [HttpPost]
-        public async Task<IActionResult> UpdateCharacter(UpdateCharacterDto character){
-            return Ok(await _characterService.UpdateCharacter(character));
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateCharacter(UpdateCharacterDto updateCharacter)
+        {
+            ServiceResponse<GetCharacterDto> response = await _characterService.UpdateCharacter(updateCharacter);
+            if (response.Data == null)
+            {
+                return NotFound(response);
+            }
+            return Ok(response);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            ServiceResponse<List<GetCharacterDto>> response = await _characterService.DeleteCharacter(id);
+            if (response.Data == null)
+            {
+                return NotFound(response);
+            }
+            return Ok(response);
+
         }
     }
 }
