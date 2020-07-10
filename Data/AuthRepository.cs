@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using sampleAPI.Models;
@@ -84,6 +86,14 @@ namespace sampleAPI.Data
                 }
                 return true;
             }
+        }
+
+        private string CreateToken(User user){
+            List<Claim> claims=new List<Claim>{
+                new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
+                new Claim(ClaimTypes.Name,user.Username)
+            };
+            return string.Empty;
         }
     }
 }
