@@ -1,7 +1,12 @@
+using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using sampleAPI.Models;
 
 namespace sampleAPI.Data
@@ -9,12 +14,14 @@ namespace sampleAPI.Data
     public class AuthRepository : IAuthRepository
     {
         public readonly DataContext _context;
-        
-        public AuthRepository(DataContext context)
+        private readonly IConfiguration _configuration;
+
+        public AuthRepository(DataContext context, IConfiguration configuration)
         {
+            _configuration = configuration;
             _context = context;
         }
-        
+
         public async Task<ServiceResponse<string>> Login(string username, string password)
         {
             ServiceResponse<string> response = new ServiceResponse<string>();
@@ -31,8 +38,8 @@ namespace sampleAPI.Data
             }
             else
             {
-                response.Data = user.Id.ToString();
-                response.Message="Kullanıcı girişi başarılı.";
+                response.Data = CreateToken(user);
+                response.Message = "Kullanıcı girişi başarılı.";
             }
             return response;
         }
@@ -73,7 +80,7 @@ namespace sampleAPI.Data
                 passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
             }
         }
-        
+
         private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
         {
             using (var hmac = new System.Security.Cryptography.HMACSHA512(passwordSalt))
@@ -88,12 +95,28 @@ namespace sampleAPI.Data
             }
         }
 
-        private string CreateToken(User user){
-            List<Claim> claims=new List<Claim>{
+        private string CreateToken(User user)
+        {
+            List<Claim> claims = new List<Claim>{
                 new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
                 new Claim(ClaimTypes.Name,user.Username)
             };
-            return string.Empty;
+
+            SymmetricSecurityKey key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:Token").Value)
+            );
+
+            SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.AddDays(1),
+                SigningCredentials = creds
+            };
+
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken token=tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }
